@@ -6,7 +6,7 @@ SMARtS is a Maude-based framework for formalizing and analyzing **Reaction Syste
 - A **library of reusable Maude strategies** that control how a reaction system is executed — e.g. running an exact number of steps with a fixed context, running until a steady state is reached, or constraining the context to include/exclude specific entities.
 
 The goal of SMARtS is to let users both *simulate* reaction systems under controlled strategies (using Maude's `srew` command) and *formally verify* temporal properties of their behavior (using `srew` as well as LTL/CTL model checking through the unified model checking tool `umaudemc`), all from the same underlying Maude specification.
-More information can be found in our [technical paper](https://github.com/DemisGIT/SMARtS-tool/blob/main/SMARtS.pdf).
+More information can be found in our [technical paper](https://github.com/DemisGIT/SMARtStool/blob/main/SMARtS.pdf).
 
 ## Project structure
 
