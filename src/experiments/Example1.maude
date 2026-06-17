@@ -1,0 +1,46 @@
+
+ load ../RS-strategy .
+
+ ---Example 1 (paper)
+ mod EXAMPLE1 is
+  pr RS .
+  
+  --- Entities of the experiments
+  ops u v w s1 s2 : -> Entity [ctor] .
+  
+  
+  --- Reactions for Example 1 
+  op Ex1 : -> Reactions [ctor] .
+  eq Ex1 =  [ s1 ,  s2  , u v ] ;
+            [ s1 s2 u v , empty , w ] ;
+            [ w , s2 s1 , u ] ;
+			[ u v s1, s2 , v ] .
+
+
+  --- Environment for Example 1
+  eq Env = s1 s2 .
+ 
+ 
+ endm
+ 
+ --- -----------------------------------------------------------------------
+ --- View: maps the theory Example1 to the concrete module EXAMPLE1-MODULE
+ --- -----------------------------------------------------------------------
+ view EXAMPLE1-View from RS-MODEL to EXAMPLE1 is
+   op TheReactions to Ex1 .
+   op TheEnvironment to Env .
+ endv
+
+
+ --- -----------------------------------------------------------------------
+ --- Instantiation: produces a fully concrete strategy module for the 
+ --- Examnple 1
+ --- -----------------------------------------------------------------------
+ smod RS-STRATEGIES-EXAMPLE1 is
+   pr RS-STRATEGIES{ EXAMPLE1-View } .
+ endsm
+
+
+--- Example of execution 	 
+srew < Ex1 | empty | nil > using se(1,s1) ; se(1, s1 s2) ; se(1, s1) .
+ 

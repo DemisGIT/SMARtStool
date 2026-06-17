@@ -1,0 +1,235 @@
+--- ============================================================
+--- RS-semantics.maude
+--- Maude formalisation of Reaction Systems (RS) semantics.
+---
+---
+--- A reaction is a triple [R, I, P] where
+---   R  -- reactants  (entities that must be PRESENT)
+---   I  -- inhibitors (entities that must be ABSENT)
+---   P  -- products   (entities produced when the reaction fires)
+---
+--- A reaction fires ("is enabled") when all reactants are present
+--- AND none of the inhibitors are present.
+---
+--- The overall computation proceeds in discrete steps driven by
+--- an external context sequence (the "environment") that supplies
+--- fresh entities at each step.
+--- ============================================================
+
+--- ============================================================
+--- We import the built-in model-checking module to use predefined
+--- sorts (e.g., Prop, State) and operators (e.g., |=)
+--- ============================================================
+load model-checker .
+
+--- ============================================================
+--- Functional module: basic types and operations used by both
+--- the data-structure layer and the rewriting rules.
+--- ============================================================
+fmod ENTITY-REACTION-TYPES is
+
+    
+	protecting EXT-BOOL .
+    protecting NAT .
+	protecting MODEL-CHECKER .
+    
+    --- ----------------------------------------------------------
+    --- Sorts
+    --- ----------------------------------------------------------
+    --- Entity     : an atomic symbol (e.g. a molecule).
+    --- Entities   : a *set* of juxtaposed entities (unordered, no duplicates).
+    --- Reaction   : a single (R, I, P) triple.
+    --- Reactions  : a ;-separated list of reactions (the RS).
+    --- Sequence   : a ,-separated list of Entity sets - used to
+    ---              represent either the context sequence supplied
+    ---              by the environment or the result sequence
+    ---              produced during a computation.
+    --- State      : the global configuration of the RS machine.
+	
+    sorts Entity Entities .
+    sorts Reaction Reactions Sequence .
+
+    --- Reaction is a subsort of Reactions (a single reaction is
+    --- trivially a list of reactions of length 1).
+    subsort Reaction < Reactions .
+
+    --- Entity is a subsort of Entities (a single entity is a
+    --- singleton set), and every set of entities is also a valid
+    --- element of a Sequence.
+    subsort Entity < Entities < Sequence .
+
+
+    --- ----------------------------------------------------------
+    --- Variables (used in equations and rules below)
+    --- ----------------------------------------------------------
+    var x : Entity .
+    vars A B S S' T R I P : Entities .
+
+
+    --- ----------------------------------------------------------
+    --- Sets of Entities
+    --- ----------------------------------------------------------
+
+    --- The empty set of entities.
+    op empty : -> Entities [ctor] .
+
+    --- Juxtaposition __ is an associative and commutative operator that 
+	--- builds a set of entities from two sets.
+    op __ : Entities Entities -> Entities [ctor assoc comm prec 1 id: empty] .
+
+    --- Idempotency: enforcing the set semantics (no duplicates).
+    eq x x = x .
+
+
+    --- Membership test: is entity x in set A?
+    op _in_ : Entity Entities -> Bool .
+    eq x in (x A) = true .
+    eq x in A     = false [owise] .   --- catch-all: not found
+
+
+    --- Subset test: is every element of A also in B?
+    op _subset_ : Entities Entities -> Bool .
+    eq empty subset A    = true .                              
+    eq (x A) subset B    = x in B and-then A subset B .       
+
+    --- Set intersection: entities present in both A and B.
+    op intersection : Entities Entities -> Entities .
+    eq intersection(A, empty) = empty .                        
+    eq intersection(A, B)     = $intersect(A, B, empty) .
+
+    --- $intersect(remaining, fixed-set, accumulator)
+    op $intersect : Entities Entities Entities -> Entities .
+    eq $intersect(empty,  S', A)    = A .                      
+    eq $intersect((x S),  S', A)    =                          
+        $intersect(S, S', if x in S' then (x A) else A fi) .
+
+
+    --- Disjointness test: are A and B disjoint (no shared elements)?
+    --- Used to check the inhibitor condition of a reaction.
+    op isDisjoint : Entities Entities -> Bool .
+    eq isDisjoint(A, B)   = intersection(A, B) == empty .
+
+
+    --- ----------------------------------------------------------
+    --- Reaction Systems data structures and core operations
+    --- ----------------------------------------------------------
+
+    --- A reaction [R, I, P]:
+    ---   R : reactants  - must ALL be present for the reaction to be fired
+    ---   I : inhibitors - must ALL be absent  for the reaction to be fired
+    ---   P : products   - the set of entities produced when it fires
+    op [_,_,_] : Entities Entities Entities -> Reaction [ctor] .
+
+
+    --- A list of reactions:   _;_ is associative with identity empty.
+    op empty : -> Reactions [ctor] .
+    op _;_ : Reactions Reactions -> Reactions [ctor assoc id: empty] .
+
+
+    --- A Sequence is an ordered list of Entities sets separated by commas
+	--- with entity nil.
+    op _,_ : Sequence Sequence -> Sequence [ctor assoc prec 2 id: nil] .
+    op nil : -> Sequence [ctor] .
+
+
+    --- ----------------------------------------------------------
+    --- System state
+    --- ----------------------------------------------------------
+    --- < A | Ds | Cs  >
+    ---   A  : Reactions  - the (fixed) set of reactions of the RS
+    ---   Ds : Sequence   - the result sequence computed so far
+    ---                     (grows to the right at every step)
+    ---   Cs : Sequence   - the context sequence supplied by the
+    ---                     environment 
+    op <_|_|_> : Reactions Sequence Sequence -> State [ctor] .
+
+
+    --- ----------------------------------------------------------
+    --- Enabledness and application of a single reaction
+    --- ----------------------------------------------------------
+
+    --- en([R,I,P], T) : reaction [R,I,P] is enabled by entity-set T
+    ---   iff all reactants R are present in T
+    ---   and none of the inhibitors I are present in T.
+    op en : Reaction Entities -> Bool .
+    eq en([R,I,P], T) = (R subset T) and-then isDisjoint(I, T) .
+
+
+    --- res([R,I,P], T) : produce the output of one reaction applied to 
+	--- the entity set T.
+    --- Returns the product set P if the reaction is enabled on T, 
+	--- or empty if not enabled.
+    op res : Reaction Entities -> Entities .
+    eq res([R,I,P], T) = if en([R,I,P], T) then P else empty fi .
+
+
+    --- ----------------------------------------------------------
+    --- Applying all reactions in the RS to an entity set
+    --- ----------------------------------------------------------
+    var r  : Reaction .
+    var Rs : Reactions .
+
+    --- res(A, T) : apply every reaction in A to T and take the
+    --- *union* of all products.  This implements the key RS semantics:
+    --- all enabled reactions fire simultaneously, and their products
+    --- are pooled.  Non-enabled reactions contribute nothing (empty).
+    op res : Reactions Entities -> Entities .
+    eq res(empty,   T)     = empty .               
+    eq res((r ; Rs), T)    = res(r, T) res(Rs, T) .
+
+endfm
+
+
+--- ============================================================
+--- System module: the rewriting rules that drive the RS
+--- step-by-step computation.
+--- ============================================================
+mod RS is
+   pr ENTITY-REACTION-TYPES .
+
+   var A  : Reactions .
+   vars C D C' : Entities .
+   vars Cs Ds  : Sequence .
+
+
+   --- Env models the environment: it includes all the entities that 
+   --- can be used  as external stimuli for context generation 
+   --- This operator is left uninterpreted here; a concrete model
+   --- is defined  for every concrete experiment in a separate file.
+   op Env : -> Entities .
+
+
+   --- --------------------------------------------------------------------------------
+   --- Rule [next] - nondeterministic context generation and reaction-application steps
+   --- --------------------------------------------------------------------------------
+
+   ---
+   --- It first nondeterministically generates a new context C over Env.
+   --- Then, it computes the new result is res(A, C D):
+   ---   - C is the current context (last element of Cs)
+   ---   - D is the most recently computed result (last element of Ds)
+   ---
+   --- The new result is appended to  D, and the new context to Cs.
+   
+   crl [next] :
+       < A | Ds , D | Cs >
+       =>
+       < A | Ds , D , res(A, C D) | Cs , C > if C C' := Env .
+	   
+	
+   --- ============================================================
+   --- PREDICATES FOR THE MODEL-CHECKER
+   --- ============================================================
+	   
+   subsort Entities < Prop .
+   
+   --- Test if a given state is steady
+   op steady : -> Prop [ctor] .
+   eq < R:Reactions | Ds:Sequence , D:Entities , D:Entities | Cs:Sequence > |= steady = true .
+   eq S:State |= steady = false [owise] .	
+      
+   --- Test if a given state includes the set of entities Req. 
+   eq < R:Reactions | Ds:Sequence , D:Entities | Cs:Sequence > |= Req:Entities = Req:Entities subset D:Entities .
+   eq S:State |= Req:Entities = false [owise] .	
+	   	   
+endm

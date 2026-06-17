@@ -1,0 +1,57 @@
+--- ============================================
+--- HCC1954 Experiments
+--- Dependency: HCC1954.maude
+--- Description: Defines the Reaction System (RS) 
+--- for the HCC1954 cancer cell line.
+--- ============================================
+
+load HCC1954 .
+ 
+--- EXPERIMENTS HCC1954
+
+--- 0. Using only the initial stimuli egf or hrg
+srew < HCC1954 | empty | nil > using s-without(1,e p t) ; se-steady(empty) ; includes(akt) .	
+srew < HCC1954 | empty | nil > using s-without(1,e p t) ; se-steady(empty) ; includes(erk12) .	
+srew < HCC1954 | empty | nil > using s-without(1,e p t) ; se-steady(empty) ; includes(p70s6k) .
+
+--- 1. Using e
+srew < HCC1954 | empty | nil > using s(1,e,p t) ; se-steady(e) ; includes(akt) .	
+srew < HCC1954 | empty | nil > using s(1,e,p t) ; se-steady(e) ; includes(erk12) .	
+srew < HCC1954 | empty | nil > using s(1,e,p t) ; se-steady(e) ; includes(p70s6k) .	
+
+--- 2. Using p
+srew < HCC1954 | empty | nil > using s(1,p,e t) ; se-steady(p) ; includes(akt) .	
+srew < HCC1954 | empty | nil > using s(1,p,e t) ; se-steady(p) ; includes(erk12) .	
+srew < HCC1954 | empty | nil > using s(1,p,e t) ; se-steady(p) ; includes(p70s6k) .	
+
+--- 3. Using T 
+srew < HCC1954 | empty | nil > using s(1,t,p e) ; se-steady(t) ; includes(akt) .	
+srew < HCC1954 | empty | nil > using s(1,t,p e) ; se-steady(t) ; includes(erk12) .	
+srew < HCC1954 | empty | nil > using s(1,t,p e) ; se-steady(t) ; includes(p70s6k) .	
+
+--- 4. Using E and P
+srew < HCC1954 | empty | nil > using s(1,e p,t) ; se-steady(e p) ; includes(akt) .	
+srew < HCC1954 | empty | nil > using s(1,e p,t) ; se-steady(e p) ; includes(erk12) .	
+srew < HCC1954 | empty | nil > using s(1,e p,t) ; se-steady(e p) ; includes(p70s6k) .	
+
+--- 5. Using E and T
+srew < HCC1954 | empty | nil > using s(1,e t,p) ; se-steady(e t) ; includes(akt) .	
+srew < HCC1954 | empty | nil > using s(1,e t,p) ; se-steady(e t) ; includes(erk12) .	
+srew < HCC1954 | empty | nil > using s(1,e t,p) ; se-steady(e t) ; includes(p70s6k) .	
+
+--- 6. Using T and P 
+srew < HCC1954 | empty | nil > using s(1,t p,e) ; se-steady(t p) ; includes(akt) .	
+srew < HCC1954 | empty | nil > using s(1,t p,e) ; se-steady(t p) ; includes(erk12) .	
+srew < HCC1954 | empty | nil > using s(1,t p,e) ; se-steady(t p) ; includes(p70s6k) .	
+
+--- 7. Using E, T and P 
+srew < HCC1954 | empty | nil > using s-atleast(1,e t p) ; se-steady(e t p) ; includes(akt) .	
+srew < HCC1954 | empty | nil > using s-atleast(1,e t p) ; se-steady(e t p) ; includes(erk12) .	
+srew < HCC1954 | empty | nil > using s-atleast(1,e t p) ; se-steady(e t p) ; includes(p70s6k) .	
+
+--- Examples of context synthesis
+srew  < HCC1954 | empty | nil > using s(6,egf e,hrg p) ; isSteady ; not(includes(erk12)) .
+
+
+eof
+ 

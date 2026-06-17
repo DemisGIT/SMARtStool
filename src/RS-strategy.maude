@@ -1,0 +1,244 @@
+--- ============================================================
+--- RS-strategy.maude
+--- Maude strategy module for controlling the execution of
+--- Reaction Systems (RS) defined in RS-semantics.maude.
+---
+--- This file provides:
+---   1. A theory (RS-MODEL) that is used to instantiate any concrete 
+---      RS model must satisfy.
+---   2. A parameterised strategy module (RS-STRATEGIES) that builds
+---      a family of reusable execution strategies over any model
+---      satisfying that theory.
+--- ============================================================
+
+load ./RS-semantics .
+
+--- ============================================================
+--- 1. Theory RS-MODEL declares what any module playing the role of 
+---    an RS model must export (i.e., their reactions and environment).  
+---    Concrete models are instantiated by providing
+---    a view that maps reactions and environment to actual definitions.
+--- ============================================================
+fth RS-MODEL is
+  pr ENTITY-REACTION-TYPES .
+
+  --- The fixed set of reactions that defines the reaction system.
+  op TheReactions : -> Reactions .
+
+  --- The global pool of entities the environment may draw from
+  --- when generating context sets.
+  op TheEnvironment  : -> Entities .
+endfth
+
+
+--- ============================================================
+--- 2. Parameterised strategy module RS-STRATEGIES{ X :: RS-MODEL }
+---
+--- The formal parameter X :: RS-MODEL means that any module
+--- instantiating these strategies must satisfy the RS-MODEL theory,
+--- i.e. it must provide valid instantiation for TheReactions and 
+--- TheEnvironment.
+---
+--- All strategies operate on terms of sort State, i.e. on
+--- configurations of the form < A | Ds | Cs | b >.
+--- ============================================================
+smod RS-STRATEGIES{ X :: RS-MODEL } is
+  pr RS .
+  pr NAT .
+
+  vars N L : Nat .
+  var S : Sequence .
+  var E : Entities .
+  vars Req Excl : Entities .
+  --- ----------------------------------------------------------
+  --- auxilizry functions
+  --------------------------------------------------------------
+  
+  --- length of a sequence
+  op len : Sequence -> Nat .
+  eq len(nil)        = 0 .          
+  eq len(S:Sequence, E:Entities)  = len(S:Sequence) + 1 [owise] .
+	
+
+  --- suffixCheck(S, Req, Excl, N) returns true iff every set of entities
+  --- in the last N elements of sequence S is a superset of Req and
+  --- is disjoint from Excl. If N >= len(S), the whole sequence is checked.
+  --- If N = 0 or S is nil, the result is vacuously true.
+ 
+   
+  op suffixCheck : Sequence Entities Entities Nat -> Bool .
+  op $suffixCheck : Sequence Entities Entities Nat Nat -> Bool .
+  
+  
+  eq suffixCheck(S,Req,Excl,N) = $suffixCheck(S, Req, Excl, N,len(S)) .
+ 
+  eq $suffixCheck(S, Req, Excl, 0, L ) = true .
+  eq $suffixCheck(S, Req, Excl, N, 0 ) = true .
+  
+  ceq $suffixCheck((E , S), Req, Excl, s(N), s(L)) =
+          $suffixCheck(S, Req, Excl, s(N), L )
+          if L > N .
+
+  ceq $suffixCheck(E , Req, Excl, s(N), s(L)) =
+		          (Req subset E) and-then (isDisjoint(Excl, E))
+		          if L <= N .		  
+				  
+  ceq $suffixCheck((E , S), Req, Excl, s(N), s(L)) =
+          (Req subset E) and-then (isDisjoint(Excl, E))
+          and-then ($suffixCheck(S, Req, Excl, N, L))
+          if L <= N .
+  
+  --- ----------------------------------------------------------
+  --- Strategy signatures
+  --- ----------------------------------------------------------
+    
+  strat isSteady                           @ State .
+
+  strat includes    : Entities             @ State .
+
+  strat se          : Nat Entities         @ State .
+  
+  strat se-cond     : Entities Entities Entities Nat @ State .
+  
+  strat se-sets : Nat Sequence             @ State .
+  
+  strat s           : Nat Entities Entities @ State .
+
+  strat s-atleast   : Nat Entities         @ State .
+
+  strat s-without   : Nat Entities         @ State .
+
+  strat se-steady   : Entities             @ State .
+
+  strat s-steady    : Entities Entities    @ State .
+  
+  strat s-all       : Nat                  @ State .
+  
+  
+  --- ----------------------------------------------------------
+  --- Strategy: se(N, Req)
+  --- "Exact" N-step execution: at each step the context injected
+  --- is EXACTLY Req (no more, no fewer entities).
+  --- ----------------------------------------------------------
+  
+  --- Base case: zero steps remaining — do nothing (idle).
+  sd se(0, Req:Entities) := idle .
+  
+  sd se(s(N) , Req:Entities ) := 
+        --- next with the injected context Req and compute the next step, then recurse.
+        next [ C:Entities <- Req:Entities ] ; se(N, Req:Entities) .
+		
+  --- ----------------------------------------------------------
+  --- Strategy: se-cond(Ctx, Req, Excl, N)
+  --- Conditional step: apply next with context Ctx only if
+  --- all sets in the suffix of length N of the result sequence
+  --- include Req and exclude Excl. Fails otherwise.
+  --- ----------------------------------------------------------
+	
+  sd se-cond (Ctx:Entities,Req:Entities,Excl:Entities, N:Nat ) :=  
+	       match < R:Reactions | Ds:Sequence | Cs:Sequence >
+	       s.t. suffixCheck(Ds:Sequence,Req:Entities,Excl:Entities,N:Nat) = true ;
+	  	        next [ C:Entities <- Ctx:Entities ] .
+		   
+		   		
+  --- ----------------------------------------------------------
+  --- Strategy: se-sets(N, Seq)
+  --- Exact N-step execution over a sequence of context sets Seq:
+  --- non-deterministically tries each entity set in Seq as the
+  --- exact context for N steps, delegating each case to se(N, Req).
+  --- Non-deterministically explores all alternatives in parallel.
+  --- ----------------------------------------------------------
+  
+  --- Base case: single entity set — run N exact steps with Req as context.
+  sd se-sets(N, Req:Entities) := se(N, Req:Entities) .   
+  
+  --- Recursive case: non-deterministically choose between running N exact
+  --- steps with the head set Req, or recurring on the tail S'.
+  sd se-sets(N, (Req:Entities , S':Sequence)) := se(N, Req:Entities) | se-sets(N,S':Sequence) .             
+
+  --- ----------------------------------------------------------
+  --- Strategy: s(N, Req, Excl)
+  --- General N-step execution: at each step the context must
+  --- INCLUDE all entities in Req and EXCLUDE all entities in Excl.
+  --- Entities beyond Req are allowed, as long as they are not in Excl.
+  --- ----------------------------------------------------------
+
+  --- Base case: zero steps remaining — do nothing.
+  sd s(0, Req:Entities, Excl:Entities) := idle .
+
+  --- Recursive case.
+  sd s(s(N), Req:Entities, Excl:Entities) :=    
+        --- Apply next with any possible context over Env.
+        next ;
+		--- Check whether Req is in the generated context and Excl is not.
+        match < R:Reactions | Ds:Sequence | Cs:Sequence , Req:Entities C:Entities >
+          s.t. isDisjoint(Excl:Entities, Req:Entities C:Entities) = true ;
+          --- Constraints satisfied: recurse.
+          s(N, Req:Entities, Excl:Entities) . 
+		  
+	 
+
+  --- ----------------------------------------------------------
+  --- Strategy: se-steady(Req)
+  --- Repeat se(1, Req) until a steady state is reached.
+  --- At each iteration exactly one step is taken with context Req;
+  --- if after that step the system is already at steady state the
+  --- strategy halts, otherwise it recurses.
+  --- ----------------------------------------------------------
+  sd se-steady(Req:Entities) :=
+      isSteady ? idle : (se(1, Req:Entities) ; se-steady(Req:Entities)) .
+
+  --- ----------------------------------------------------------
+  --- Strategy: s-steady(Req, Excl)
+  --- Repeat s(1, Req, Excl) until a steady state is reached.
+  --- Like se-steady but using the more general s strategy so that
+  --- the context must include Req and exclude Excl at every step.
+  --- ----------------------------------------------------------
+   
+  sd s-steady(Req:Entities, Excl:Entities) :=
+      isSteady ? idle : (s(1, Req:Entities, Excl:Entities) ; s-steady(Req:Entities, Excl:Entities)) .
+
+
+  --- ----------------------------------------------------------
+  --- Strategy: s-all(N)
+  --- Run N unconstrained steps: context may be any subset of
+  --- Stimulus (Req = empty, Excl = empty).
+  --- ----------------------------------------------------------
+ 
+  sd s-all(N) := s(N, empty, empty) .
+
+  --- ----------------------------------------------------------
+  --- Strategy: s-atleast(N, Req)
+  --- Run N steps where the context must include at least Req,
+  --- but no entities are excluded.
+  --- ----------------------------------------------------------
+  sd s-atleast(N, Req:Entities) := s(N, Req:Entities, empty) .
+
+  --- ----------------------------------------------------------
+  --- Strategy: s-without(N, Excl)
+  --- Run N steps where the context must not contain any entity
+  --- from Excl, but no specific entities are required.
+  --- ----------------------------------------------------------
+  sd s-without(N, Excl:Entities) := s(N, empty, Excl:Entities) .
+
+  --- ----------------------------------------------------------
+  --- Strategy: isSteady
+  --- Test whether the system has reached a steady state, i.e.
+  --- whether the last two entries in the result sequence Ds are
+  --- identical (D:Entities appears twice in a row).
+  --- ----------------------------------------------------------
+ 
+  sd isSteady :=
+      match < R:Reactions | Ds:Sequence , D:Entities , D:Entities | Cs:Sequence > . 
+      --- ? idle : fail .
+
+  --- ----------------------------------------------------------
+  --- Strategy: includes(Req)
+  --- Test whether the most recently computed result set contains
+  --- at least all entities in Req.
+  --- ----------------------------------------------------------
+  sd includes(Req:Entities) :=
+      match < R:Reactions | Ds:Sequence , Req:Entities D:Entities | Cs:Sequence > . 
+      --- ? idle : fail .
+  	  
+endsm

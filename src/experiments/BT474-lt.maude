@@ -1,0 +1,85 @@
+ load ../RS-strategy .
+ 
+ --- Case study: BT474-LT (long-term) 
+ mod BT474-LT-MODULE is
+  pr RS .
+ 
+  --- Entities of the experiments 
+  ops ops akt bax cjun craf cyclcind1 cyclinb1 cyclind1 e erbb1 erbb2 erbb3 
+      erk12 foxo13a gsk3ab nfkb nfkb  p p38 p53 p70s6k pras pten rb rps6 
+	  st t tsc2 : -> Entity [ctor] .  
+  
+  --- Reactions for the BT474-LT experiment
+  op BT474-LT : -> Reactions [ctor] .
+  eq BT474-LT =  [ akt  , pten  , akt ] ;
+   [ erbb2 , pten  , akt ] ;
+   [ erbb1 , pten  , akt ] ;
+   [ erbb3 , pten  , akt ] ;
+   [ bax  , empty   , bax ] ;
+   [ cjun , gsk3ab  , cjun ] ;
+   [ craf  , erk12  , craf ] ;
+   [ erbb1 , erk12  , craf ] ;
+   [ erbb2 , erk12  , craf ] ;
+   [ cyclinb1 ,  p53 , cyclinb1 ] ;
+   [ erbb1 ,  p53 , cyclinb1 ] ;
+   [ erbb3 ,  p53 , cyclinb1 ] ;
+   [ cyclind1 ,  gsk3ab  , cyclind1 ] ;
+   [ erk12 ,  gsk3ab  , cyclind1 ] ;
+   [ akt ,  gsk3ab  , cyclind1 ] ;
+   [ rps6 ,  gsk3ab  , cyclind1 ] ;
+   [ erbb1 , e  p , erbb1 ] ;
+   [ st , e  p , erbb1 ] ;
+   [ erbb2 , e  p  t , erbb2 ] ;
+   [ st , e  p  t , erbb2 ] ;
+   [ erbb3 , e  p  pten , erbb3 ] ;
+   [ st , e  p  pten , erbb3 ] ;
+   [ rps6 , e  p  pten , erbb3 ] ;
+   [ erk12 , empty , erk12 ] ;
+   [ craf , empty  , erk12 ] ;
+   [ foxo13a , akt , foxo13a ] ;
+   [ gsk3ab , empty , gsk3ab ] ;
+   [ p53 , empty , gsk3ab ] ;
+   [ cyclcind1 , empty , gsk3ab ] ;
+   [ nfkb , empty , nfkb ] ;
+   [ p38 , empty ,  p38 ] ;
+   [ akt , empty ,  p38 ] ;
+   [ p53 , empty ,  p53 ] ;
+   [ st , empty  ,  p53 ] ;
+   [ rb , empty ,  p53 ] ;
+   [ p38 , empty ,  p53 ] ;
+   [ pten , empty ,  p53 ] ;
+   [ cyclinb1 , empty   ,  p53 ] ;
+   [ p70s6k , nfkb  pras  tsc2 ,  p70s6k ] ;
+   [ erk12 , nfkb   pras  tsc2 ,  p70s6k ] ;
+   [ pras , akt , pras ] ;
+   [ pten , gsk3ab , pten ] ;
+   [ rb  ,  cyclind1 ,  rb ] ;
+   [ nfkb  ,  cyclind1 ,  rb ] ;
+   [ rps6 , empty  , rps6 ] ;
+   [ p70s6k , empty  , rps6 ] ;
+   [ tsc2 , erk12  akt  gsk3ab ,  tsc2 ] .
+
+  --- Environment for the BT474-LT experiment
+  eq Env = st e p t .
+ 
+ 		  	     
+ endm
+ 
+ --- -----------------------------------------------------------------------
+ --- View: maps the theory RS-MODEL to the concrete module BT474-LT-MODULE
+ --- -----------------------------------------------------------------------
+ view BT474-LT-View from RS-MODEL to BT474-LT-MODULE is
+   op TheReactions to BT474-LT .
+   op TheEnvironment  to Env .
+ endv
+
+
+ --- -----------------------------------------------------------------------
+ --- Instantiation: produces a fully concrete strategy module for the BT474-LT
+ --- experiment
+ --- -----------------------------------------------------------------------
+ smod RS-STRATEGIES-BT474-LT is
+   pr RS-STRATEGIES{ BT474-LT-View } .
+ endsm
+
+

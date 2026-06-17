@@ -1,0 +1,46 @@
+--- ============================================
+--- HCC1954-LT (long term) Experiments
+--- Dependency: HCC1954-lt.maude
+--- Description: Defines the Reaction System (RS) 
+--- for the HCC1954-LT cancer cell line.
+--- ============================================
+ 
+load HCC1954-lt .
+
+	 
+--- EXPERIMENTS HCC1954-LT
+
+--- 0. Using only the initial stimuli egf or hrg
+srew < HCC1954-LT | empty | nil > using s-without(1,e p t) ; se-steady(empty) ; includes(rps6) .	
+srew < HCC1954-LT | empty | nil > using s-without(1,e p t) ; se-steady(empty) ; includes(rb) .	
+
+--- 1. Using e
+srew < HCC1954-LT | empty | nil > using s(1,e,p t) ; se-steady(e) ; includes(rps6) .	
+srew < HCC1954-LT | empty | nil > using s(1,e,p t) ; se-steady(e) ; includes(rb) .	
+
+--- 2. Using p
+srew < HCC1954-LT | empty | nil > using s(1,p,e t) ; se-steady(p) ; includes(rps6) .	
+srew < HCC1954-LT | empty | nil > using s(1,p,e t) ; se-steady(p) ; includes(rb) .	
+	
+--- 3. Using T 
+srew < HCC1954-LT | empty | nil > using s(1,t,p e) ; se-steady(t) ; includes(rps6) .	
+srew < HCC1954-LT | empty | nil > using s(1,t,p e) ; se-steady(t) ; includes(rb) .	
+
+--- 4. Using E and P
+srew < HCC1954-LT | empty | nil > using s(1,e p,t) ; se-steady(e p) ; includes(rps6) .	
+srew < HCC1954-LT | empty | nil > using s(1,e p,t) ; se-steady(e p) ; includes(rb) .	
+
+--- 5. Using E and T
+srew < HCC1954-LT | empty | nil > using s(1,e t,p) ; se-steady(e t) ; includes(rps6) .	
+srew < HCC1954-LT | empty | nil > using s(1,e t,p) ; se-steady(e t) ; includes(rb) .	
+
+--- 6. Using T and P 
+srew < HCC1954-LT | empty | nil > using s(1,t p,e) ; se-steady(t p) ; includes(rps6) .	
+srew < HCC1954-LT | empty | nil > using s(1,t p,e) ; se-steady(t p) ; includes(rb) .	
+
+--- 7. Using E, T and P 
+srew < HCC1954-LT | empty | nil > using s-atleast(1,e t p) ; se-steady(e t p) ; includes(rps6) .	
+srew < HCC1954-LT | empty | nil > using s-atleast(1,e t p) ; se-steady(e t p) ; includes(rb) .		
+
+eof
+ 

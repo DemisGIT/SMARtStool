@@ -1,0 +1,44 @@
+# 0. No therapy
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( akt /\ steady )" "s-without(1,e p t) ; se-steady(empty)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( erk12 /\ steady )" "s-without(1,e p t) ; se-steady(empty)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( p70s6k /\ steady )" "s-without(1,e p t) ; se-steady(empty)"
+
+
+# 1. Using e
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( akt /\ steady )" "s(1,e,p t) ; se-steady(e)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( erk12 /\ steady )" "s(1,e,p t) ; se-steady(e)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( p70s6k /\ steady )" "s(1,e,p t) ; se-steady(e)"
+
+# 2. Using p
+
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( akt /\ steady )" "s(1,p,e t) ; se-steady(p)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( erk12 /\ steady )" "s(1,p,e t) ; se-steady(p)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( p70s6k /\ steady )" "s(1,p,e t) ; se-steady(p)"
+
+# 3. Using t
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( akt /\ steady )" "s(1,t,e p) ; se-steady(t)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( erk12 /\ steady )" "s(1,t,e p) ; se-steady(t)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( p70s6k /\ steady )" "s(1,t,e p) ; se-steady(t)"
+
+# 4. Using e and p
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( akt /\ steady )" "s(1,e p,t) ; se-steady(e p)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( erk12 /\ steady )" "s(1,e p,t) ; se-steady(e p)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( p70s6k /\ steady )" "s(1,e p,t) ; se-steady(e p)"
+
+# 5. Using e and t
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( akt /\ steady )" "s(1,e t,p) ; se-steady(e t)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( erk12 /\ steady )" "s(1,e t,p) ; se-steady(e t)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( p70s6k /\ steady )" "s(1,e t,p) ; se-steady(e t)"
+
+# 6. Using p and t
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( akt /\ steady )" "s(1,p t,e) ; se-steady(p t)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( erk12 /\ steady )" "s(1,p t,e) ; se-steady(p t)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( p70s6k /\ steady )" "s(1,p t,e) ; se-steady(p t)"
+
+# 7. Using e, p and t
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( akt /\ steady )" "s-atleast(1,e t p) ; se-steady(e t p)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( erk12 /\ steady )" "s-atleast(1,e t p) ; se-steady(e t p)"
+umaudemc check SKBR3.maude  "< SKBR3 | empty | nil >" "E <> ( p70s6k /\ steady )" "s-atleast(1,e t p) ; se-steady(e t p)"
+
+  
+
