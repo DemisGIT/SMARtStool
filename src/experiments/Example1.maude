@@ -42,5 +42,5 @@
 
 
 --- Example of execution 	 
-srew < Ex1 | empty | nil > using se(1,s1) ; se(1, s1 s2) ; se(1, s1) .
+srew < Ex1 | empty | nil > using se(1,s1) ; se(1, s1 s2) ; se(1, s2) .
  
